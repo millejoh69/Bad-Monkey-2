@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bad Monkey: Level 1</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="frame">
+      <h1>Bad Monkey</h1>
+      <p class="subtitle">An arcade brawler demo: Intro + Level 1</p>
+      <canvas id="game" width="960" height="540" aria-label="Bad Monkey game canvas"></canvas>
+      <section class="mobile-controls" aria-label="Touch controls">
+        <div class="dpad">
+          <button class="touch-btn" data-key="arrowleft">◀</button>
+          <button class="touch-btn" data-key="arrowup">▲</button>
+          <button class="touch-btn" data-key="arrowdown">▼</button>
+          <button class="touch-btn" data-key="arrowright">▶</button>
+        </div>
+        <div class="actions">
+          <button class="touch-btn action" data-key="j">J</button>
+          <button class="touch-btn action" data-key="k">K</button>
+          <button class="touch-btn action" data-key="l">L</button>
+          <button class="touch-btn action jump" data-key="space">JUMP</button>
+          <button class="touch-btn action restart" data-key="r">RESTART</button>
+        </div>
+      </section>
+      <p class="controls">
+        Move: <kbd>Arrow Keys</kbd>/<kbd>WASD</kbd> or Touch D-pad &nbsp; Jump: <kbd>Space</kbd> &nbsp; Attack: <kbd>J</kbd> Punch, <kbd>K</kbd> Kick/Knife Throw, <kbd>L</kbd> Spin &nbsp; Hero Swap: <kbd>Shift</kbd> &nbsp; Music: <kbd>M</kbd> &nbsp; Restart: <kbd>R</kbd> &nbsp; Skip Intro: <kbd>Enter</kbd>
+      </p>
+    </main>
+    <script src="game.js"></script>
+  </body>
+</html>
