@@ -74,6 +74,7 @@ for (const track of Object.values(audioTracks)) {
 
 const sfxTracks = {
   punch: new Audio("assets/audio/punch.wav"),
+  playerHit: new Audio("assets/audio/player_hit.wav"),
   enemyDie: new Audio("assets/audio/enemy_die.wav"),
   knifeThrow: new Audio("assets/audio/knife_throw.wav"),
   chainUse: new Audio("assets/audio/chain_use.wav"),
@@ -657,6 +658,9 @@ const sfx = {
   punch() {
     playSfx("punch");
   },
+  playerHit() {
+    playSfx("playerHit");
+  },
   enemyDie() {
     playSfx("enemyDie");
   },
@@ -844,6 +848,7 @@ class Fighter {
   damage(amount, push = 0) {
     if (!this.alive) return;
     this.hp -= amount;
+    if (!this.ai) sfx.playerHit();
     this.hitTimer = 0.2;
     this.x += push;
     this.x = clamp(this.x, 0, WORLD_WIDTH);
