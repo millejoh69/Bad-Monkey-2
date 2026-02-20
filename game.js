@@ -31,6 +31,7 @@ const assets = {
   victoryFight: new Image(),
   victoryCongrats: new Image(),
   finalEnd: new Image(),
+  gameOverScreen: new Image(),
 };
 assets.johnny.src = "assets/johnny.png";
 assets.travis.src = "assets/travis.png";
@@ -53,6 +54,7 @@ assets.creditsRef.src = "assets/credits_ref.jpeg";
 assets.victoryFight.src = "assets/victory_fight.png";
 assets.victoryCongrats.src = "assets/victory_congrats.png";
 assets.finalEnd.src = "assets/final_end.png";
+assets.gameOverScreen.src = "assets/game_over_screen.png";
 
 const audioTracks = {
   opening: new Audio("assets/audio/opening.mp3"),
@@ -66,6 +68,8 @@ for (const track of Object.values(audioTracks)) {
   track.preload = "auto";
   track.loop = true;
   track.volume = 0.75;
+  track.playsInline = true;
+  track.load();
 }
 
 const sfxTracks = {
@@ -190,6 +194,16 @@ for (const btn of document.querySelectorAll(".touch-btn")) {
   btn.addEventListener("mouseup", up);
   btn.addEventListener("mouseleave", up);
 }
+
+canvas.addEventListener("touchstart", (e) => {
+  if (window.__unlockAudio) window.__unlockAudio();
+  if (state.scene === "start") {
+    setVirtualKey("enter", true);
+    setTimeout(() => setVirtualKey("enter", false), 80);
+  }
+  e.preventDefault();
+}, { passive: false });
+canvas.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
 function tap(key, attr) {
   const down = keys.has(key);
@@ -630,6 +644,10 @@ window.__unlockAudio = () => {
       s.currentTime = 0;
     }).catch(() => {});
   }
+  if (state.scene === "level") bgm.play(state.bossSpawned ? "boss" : "gameplay");
+  else if (state.scene === "ending") bgm.play("ending", true);
+  else if (state.scene === "gameover") bgm.play("gameOver", false);
+  else bgm.play("opening");
 };
 window.addEventListener("keydown", () => window.__unlockAudio(), { once: true });
 window.addEventListener("mousedown", () => window.__unlockAudio(), { once: true });
@@ -1592,7 +1610,8 @@ function drawEnding(dt) {
 }
 
 function drawGameOver(dt) {
-  drawPhoto(assets.finalEnd, 0, 0, VIRTUAL_W, VIRTUAL_H);
+  const gameOverArt = assets.gameOverScreen.complete && assets.gameOverScreen.naturalWidth ? assets.gameOverScreen : assets.finalEnd;
+  drawPhoto(gameOverArt, 0, 0, VIRTUAL_W, VIRTUAL_H);
   rect(0, 0, VIRTUAL_W, VIRTUAL_H, "rgba(0,0,0,0.2)");
   if (!state.gameOverInit) {
     state.gameOverInit = true;
@@ -1709,6 +1728,7 @@ function resetToGameplay() {
 
 let last = performance.now();
 bgm.play("opening");
+window.addEventListener("load", () => bgm.play("opening"), { once: true });
 
 function loop(now) {
   const dt = Math.min(0.033, (now - last) / 1000);
