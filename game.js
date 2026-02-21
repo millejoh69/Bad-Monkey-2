@@ -123,6 +123,7 @@ const sfxTracks = {
   jump: new Audio("assets/audio/jump.wav"),
   congratulations: new Audio("assets/audio/congratulations.wav"),
   youLose: new Audio("assets/audio/you_lose.wav"),
+  pauseIn: new Audio("assets/audio/pause_in.wav"),
 };
 for (const s of Object.values(sfxTracks)) {
   s.preload = "auto";
@@ -137,6 +138,8 @@ const voiceClips = {
   mikeYouLoveMe: new Audio("assets/audio/mike_you_love_me.mp3"),
   track4: new Audio("assets/audio/track4.mp3"),
   mikeInsulting: new Audio("assets/audio/mike_insulting.mp3"),
+  mikeStopInsult1: new Audio("assets/audio/mike_stop_insult_1.mp3"),
+  mikeStopInsult2: new Audio("assets/audio/mike_stop_insult_2.mp3"),
   mikePayForThat: new Audio("assets/audio/mike_pay_for_that.mp3"),
   mikeNooo: new Audio("assets/audio/nooo.mp3"),
 };
@@ -289,6 +292,7 @@ const pressed = {
   space: false,
   s: false,
   m: false,
+  p: false,
   r: false,
   shift: false,
   enter: false,
@@ -836,6 +840,9 @@ const sfx = {
   youLose() {
     playSfx("youLose");
   },
+  pauseIn() {
+    playSfx("pauseIn");
+  },
   pickup() {},
   bossSpawn() {},
 };
@@ -1200,7 +1207,9 @@ function applyMikeEnergyDamage(amount, source = "hit") {
   }
   if (source === "taunt") {
     mike.blinkRed = Math.max(mike.blinkRed, 0.7);
-    playVoiceClip("mikeInsulting");
+    const insultClip = state.tauntInsultAlt ? "mikeStopInsult2" : "mikeStopInsult1";
+    state.tauntInsultAlt = !state.tauntInsultAlt;
+    playVoiceClip(insultClip);
     state.tauntFlashTimer = 0.85;
     state.tauntIdleTimer = 0;
   } else {
@@ -1705,6 +1714,8 @@ const state = {
   tauntHintPulse: 0,
   tauntLastText: "",
   tauntIdleTimer: 0,
+  tauntInsultAlt: false,
+  paused: false,
   mikeDialog: {
     phase: null,
     art: null,
@@ -1846,10 +1857,10 @@ const introScenes = [
       rect(0, 0, VIRTUAL_W, VIRTUAL_H, "#040404");
       drawPhoto(assets.introKidnap, 0, 0, VIRTUAL_W, VIRTUAL_H);
       rect(0, 0, VIRTUAL_W, VIRTUAL_H, "rgba(0,0,0,0.35)");
-      rect(8, 12, 206, 100, "rgba(0,0,0,0.68)");
+      rect(106, 12, 206, 100, "rgba(0,0,0,0.68)");
       drawTypewriterLines(
         OPENING_LINES,
-        14,
+        112,
         30,
         8,
         "#f4f4f4",
@@ -2449,7 +2460,8 @@ function drawMikeDialog(dt) {
   rect(8, 110, VIRTUAL_W - 16, 62, "rgba(0,0,0,0.72)");
   const typedSeconds = Math.max(0, now - d.typingStart);
   drawTypewriterWrapped(d.baseLine, 14, 124, 7, "#ffffff", typedSeconds, d.cps, 45);
-  text("PRESS S TO SKIP", 160, 168, 7, "#ffd88a", "center");
+  const showSkipHint = d.phase !== "phase2" || d.sequenceStep > 0;
+  if (showSkipHint) text("PRESS S TO SKIP", 160, 168, 7, "#ffd88a", "center");
 
   if (!d.voiceStarted && d.voiceClip) {
     d.voiceStarted = true;
@@ -2470,7 +2482,7 @@ function drawMikeDialog(dt) {
     if (d.phase === "intro") state.finalFightLoveEnabled = true;
   };
 
-  if (tap("s", "s")) {
+  if (showSkipHint && tap("s", "s")) {
     stopVoiceClip();
     returnToFightFromDialog();
   }
@@ -2509,28 +2521,21 @@ function drawMikeDialog(dt) {
   const textDone = typedSeconds > d.baseLine.length / d.cps + 0.15;
   if (d.phase === "phase2") {
     if (d.sequenceStep === 0) {
-      if (textDone && d.voiceDone) {
-        d.doneTimer += dt;
-        if (d.doneTimer >= 2) {
-          d.doneTimer = 0;
-          d.sequenceStep = 1;
-          stopVoiceClip();
-          d.baseLine = "Unless...you tell me...that you love me?";
-          d.voiceClip = "mikeTellLoveMe";
-          d.voiceStarted = false;
-          d.voiceDone = false;
-          d.typingStart = now;
-        }
+      if (d.voiceDone) {
+        d.doneTimer = 0;
+        d.sequenceStep = 1;
+        stopVoiceClip();
+        d.baseLine = "Unless...you tell me...that you love me?";
+        d.voiceClip = "mikeTellLoveMe";
+        d.voiceStarted = false;
+        d.voiceDone = false;
+        d.typingStart = now;
       } else {
         d.doneTimer = 0;
       }
     } else {
-      if (textDone) {
-        d.doneTimer += dt;
-        if (d.doneTimer >= 2) {
-          d.doneTimer = 0;
-          returnToFightFromDialog();
-        }
+      if (textDone && d.voiceDone) {
+        returnToFightFromDialog();
       } else {
         d.doneTimer = 0;
       }
@@ -2841,6 +2846,8 @@ function resetGame() {
   state.tauntHintPulse = 0;
   state.tauntLastText = "";
   state.tauntIdleTimer = 0;
+  state.tauntInsultAlt = false;
+  state.paused = false;
   state.mikeDialog.phase = null;
   state.mikeDialog.art = null;
   state.mikeDialog.baseLine = "";
@@ -2932,6 +2939,8 @@ function resetToGameplay() {
   state.tauntHintPulse = 0;
   state.tauntLastText = "";
   state.tauntIdleTimer = 0;
+  state.tauntInsultAlt = false;
+  state.paused = false;
   state.mikeDialog.phase = null;
   state.mikeDialog.art = null;
   state.mikeDialog.baseLine = "";
@@ -2969,6 +2978,19 @@ function loop(now) {
   if (tap("m", "m")) {
     bgm.toggle();
   }
+  if (tap("p", "p") && state.scene === "level") {
+    if (!state.paused) {
+      state.paused = true;
+      sfx.pauseIn();
+    } else {
+      state.paused = false;
+    }
+  }
+  if (state.scene === "secret_end" && tap("r", "r")) {
+    state.secretEnd.restartReady = true;
+    state.secretEnd.restartFading = true;
+    if (state.secretEnd.restartFade <= 0) state.secretEnd.restartFade = 0;
+  }
   if (state.scene !== "secret_end" && tap("r", "r")) {
     if (state.scene === "gameover") resetToGameplay();
     else resetGame();
@@ -2985,8 +3007,13 @@ function loop(now) {
   } else if (state.scene === "mike_dialog") {
     drawMikeDialog(dt);
   } else if (state.scene === "level") {
-    updateLevel(dt);
+    if (!state.paused) updateLevel(dt);
     drawLevel();
+    if (state.paused) {
+      rect(72, 74, 176, 34, "rgba(0,0,0,0.72)");
+      text("PAUSED", 160, 89, 12, "#fff36f", "center");
+      text("PRESS P TO RESUME", 160, 101, 7, "#ffffff", "center");
+    }
   } else if (state.scene === "ending") {
     drawEnding(dt);
   } else if (state.scene === "secret_end") {
