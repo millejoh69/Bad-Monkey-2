@@ -797,29 +797,20 @@ class Soundtrack {
 
 const soundtrack = new Soundtrack();
 let audioPrimed = false;
+function primeAudioClip(a) {
+  if (!a) return;
+  a.play().then(() => {
+    a.pause();
+    a.currentTime = 0;
+  }).catch(() => {});
+}
+
 window.__unlockAudio = () => {
   soundtrack.unlockFromGesture();
   if (!audioPrimed) {
     audioPrimed = true;
-    for (const [name, t] of Object.entries(audioTracks)) {
-      if (bgm.current === name) continue;
-      t.play().then(() => {
-        t.pause();
-        t.currentTime = 0;
-      }).catch(() => {});
-    }
-  }
-  for (const s of Object.values(sfxTracks)) {
-    s.play().then(() => {
-      s.pause();
-      s.currentTime = 0;
-    }).catch(() => {});
-  }
-  for (const clip of Object.values(voiceClips)) {
-    clip.play().then(() => {
-      clip.pause();
-      clip.currentTime = 0;
-    }).catch(() => {});
+    // Prime only the opening track immediately so title/intro music starts fast.
+    primeAudioClip(audioTracks.opening);
   }
   if (state.scene === "level") bgm.play(state.bossSpawned ? "boss" : "gameplay");
   else if (state.scene === "ending") bgm.play("ending", true);
@@ -2190,17 +2181,22 @@ function drawIntro(dt) {
 function drawStart(dt) {
   state.timer += dt;
   bgm.play("opening");
+  const startReady = assets.startScreen.complete && assets.startScreen.naturalWidth;
+  const introReady = assets.introKidnap.complete && assets.introKidnap.naturalWidth;
+  const readyToStart = startReady && introReady;
   rect(0, 0, VIRTUAL_W, VIRTUAL_H, "#000");
-  if (assets.startScreen.complete && assets.startScreen.naturalWidth) {
+  if (startReady) {
     drawPhotoContain(assets.startScreen, 0, 0, VIRTUAL_W, VIRTUAL_H);
   }
   rect(0, 146, VIRTUAL_W, 34, "rgba(0,0,0,0.52)");
-  if (Math.sin(state.timer * 6) > -0.15) {
+  if (readyToStart && Math.sin(state.timer * 6) > -0.15) {
     text("PRESS START", 160, 166, 12, "#ffe45f", "center");
   }
-  text("ENTER / SPACE / TAP BUTTON", 160, 177, 6, "#dce7ff", "center");
+  text(readyToStart ? "ENTER / SPACE / TAP BUTTON" : "LOADING INTRO ART...", 160, 177, 6, "#dce7ff", "center");
 
-  if (state.startFade <= 0 && (tap("enter", "enter") || tap("space", "space") || tap("j", "j"))) {
+  if (state.startFade <= 0 && readyToStart && (tap("enter", "enter") || tap("space", "space") || tap("j", "j"))) {
+    if (window.__unlockAudio) window.__unlockAudio();
+    bgm.play("opening");
     state.startFade = 0.001;
   }
   if (state.startFade > 0) {
