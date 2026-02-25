@@ -1,5 +1,5 @@
 import { createServer } from "http";
-import { readFile } from "fs/promises";
+import { appendFile, mkdir, readFile } from "fs/promises";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -21,6 +21,26 @@ if (existsSync(path.join(__dirname, ".env"))) {
 }
 
 const PORT = Number(process.env.PORT || 8080);
+const STT_LOG_PATH = process.env.STT_LOG_PATH || path.join(__dirname, "logs", "stt.log");
+const TAUNT_LOG_PATH = process.env.TAUNT_LOG_PATH || path.join(__dirname, "logs", "taunt_decisions.log");
+
+async function appendSttLog(entry) {
+  try {
+    await mkdir(path.dirname(STT_LOG_PATH), { recursive: true });
+    await appendFile(STT_LOG_PATH, `${JSON.stringify(entry)}\n`, "utf8");
+  } catch (err) {
+    console.error("STT log write failed:", String(err?.message || err));
+  }
+}
+
+async function appendTauntLog(entry) {
+  try {
+    await mkdir(path.dirname(TAUNT_LOG_PATH), { recursive: true });
+    await appendFile(TAUNT_LOG_PATH, `${JSON.stringify(entry)}\n`, "utf8");
+  } catch (err) {
+    console.error("Taunt log write failed:", String(err?.message || err));
+  }
+}
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -276,14 +296,43 @@ async function transcribeAudio(payload) {
 
 async function handleDialogueApi(req, res) {
   const payload = await parseJsonBody(req);
+  const source = String(payload?.source || "");
+  const shouldLogTauntDecision = source === "taunt-eval";
 
   try {
     const result = await callOpenAI(payload);
+    if (shouldLogTauntDecision) {
+      await appendTauntLog({
+        ts: new Date().toISOString(),
+        sessionId: String(payload?.sessionId || ""),
+        source,
+        scene: String(payload?.scene || ""),
+        mikeMode: String(payload?.mikeMode || ""),
+        phase: String(payload?.phase || ""),
+        playerText: String(payload?.playerText || ""),
+        classification: String(result?.classification || ""),
+        fallback: false,
+      });
+    }
     res.writeHead(200, { "Content-Type": MIME[".json"] });
     res.end(JSON.stringify({ ok: true, result }));
   } catch (err) {
     const classification = classifyLocal(payload.playerText || "", payload.phase || "intro");
     const result = { classification, mikeLine: localMikeLine(payload.phase || "intro", classification) };
+    if (shouldLogTauntDecision) {
+      await appendTauntLog({
+        ts: new Date().toISOString(),
+        sessionId: String(payload?.sessionId || ""),
+        source,
+        scene: String(payload?.scene || ""),
+        mikeMode: String(payload?.mikeMode || ""),
+        phase: String(payload?.phase || ""),
+        playerText: String(payload?.playerText || ""),
+        classification: String(result?.classification || ""),
+        fallback: true,
+        error: String(err.message || err),
+      });
+    }
     res.writeHead(200, { "Content-Type": MIME[".json"] });
     res.end(JSON.stringify({ ok: true, result, fallback: true, error: String(err.message || err) }));
   }
@@ -321,9 +370,27 @@ async function handleTranscribeApi(req, res) {
   const payload = await parseJsonBody(req);
   try {
     const text = await transcribeAudio(payload);
+    await appendSttLog({
+      ts: new Date().toISOString(),
+      ok: true,
+      source: String(payload?.source || "unknown"),
+      scene: String(payload?.scene || ""),
+      mikeMode: String(payload?.mikeMode || ""),
+      mimeType: String(payload?.mimeType || ""),
+      text,
+    });
     res.writeHead(200, { "Content-Type": MIME[".json"] });
     res.end(JSON.stringify({ ok: true, text }));
   } catch (err) {
+    await appendSttLog({
+      ts: new Date().toISOString(),
+      ok: false,
+      source: String(payload?.source || "unknown"),
+      scene: String(payload?.scene || ""),
+      mikeMode: String(payload?.mikeMode || ""),
+      mimeType: String(payload?.mimeType || ""),
+      error: String(err.message || err),
+    });
     res.writeHead(503, { "Content-Type": MIME[".json"] });
     res.end(JSON.stringify({ ok: false, text: "", error: String(err.message || err) }));
   }

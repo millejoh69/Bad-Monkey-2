@@ -2,6 +2,7 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const fxCanvas = document.createElement("canvas");
 const fxCtx = fxCanvas.getContext("2d");
+const SESSION_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 const VIRTUAL_W = 320;
 const VIRTUAL_H = 180;
@@ -1140,6 +1141,9 @@ async function transcribeMicWithOpenAI(durationMs = 1200) {
       body: JSON.stringify({
         audioBase64,
         mimeType: blob.type || "audio/webm",
+        source: "taunt",
+        scene: state.scene,
+        mikeMode: state.mikeMode,
       }),
     });
     if (!res.ok) return "";
@@ -1319,6 +1323,9 @@ async function evaluateTauntAndDamage(spokenText) {
       phase: "intro",
       mikeMode: state.mikeMode,
       playerText: t,
+      source: "taunt-eval",
+      sessionId: SESSION_ID,
+      scene: state.scene,
       exchange: 0,
       historyUser: [],
       historyMike: [],
