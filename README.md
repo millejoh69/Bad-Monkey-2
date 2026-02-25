@@ -3,7 +3,7 @@
 A browser brawler inspired by late-80s side-scrollers.
 
 ## Story setup
-Mike (a shaved monkey) kidnaps President Ronnie's daughter. Johnny and Travis hit the streets to get her back.
+Mike (a shaved monkey) kidnaps President Ronnie's daughter. Johnny and Niall hit the streets to get her back.
 
 ## New Mike voice branches
 - First Mike encounter triggers a dialogue inter-state.

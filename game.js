@@ -54,8 +54,19 @@ const assets = {
   mikeLove7: new Image(),
   theEndOverlay: new Image(),
 };
-assets.johnny.src = "assets/johnny.png";
-assets.travis.src = "assets/travis.png";
+function setImageSource(img, preferredPath, fallbackPath) {
+  img.onerror = null;
+  if (fallbackPath) {
+    img.onerror = () => {
+      img.onerror = null;
+      img.src = fallbackPath;
+    };
+  }
+  img.src = preferredPath;
+}
+
+setImageSource(assets.johnny, "assets/johnny head.png", "assets/johnny.png");
+setImageSource(assets.travis, "assets/niall head 3.png", "assets/travis.png");
 assets.mike.src = "assets/mike.png";
 assets.bodyJohnny.src = "assets/body_johnny.png";
 assets.bodyTravis.src = "assets/body_travis.png";
@@ -65,8 +76,8 @@ assets.mikeBodyNormal.src = "assets/mike_body_normal.png";
 assets.mikeBodyEnraged.src = "assets/mike_body_enraged.png";
 assets.knifeSprite.src = "assets/knife_sprite.png";
 assets.chainSprite.src = "assets/chain_sprite.png";
-assets.startScreen.src = "assets/start_screen.png";
-assets.introKidnap.src = "assets/intro_kidnap.png";
+setImageSource(assets.startScreen, "assets/ChatGPT Image Feb 24, 2026, 10_54_55 PM.png", "assets/start_screen.png");
+setImageSource(assets.introKidnap, "assets/cChatGPT Image Feb 24, 2026, 11_22_13 PM.png", "assets/intro_kidnap.png");
 assets.logo.src = "assets/bad_dudes_logo.jpg";
 assets.truck.src = "assets/bad_dudes_truck.jpg";
 assets.openingText.src = "assets/bad_dudes_text.jpg";
@@ -75,7 +86,7 @@ assets.bgSkyline.src = "assets/bg_skyline.png";
 assets.bgStreetFront.src = "assets/bg_street_front.png";
 assets.creditsRef.src = "assets/credits_ref.jpeg";
 assets.victoryFight.src = "assets/victory_fight.png";
-assets.victoryCongrats.src = "assets/victory_congrats.png";
+setImageSource(assets.victoryCongrats, "assets/dChatGPT Image Feb 24, 2026, 11_46_09 PM.png", "assets/victory_congrats.png");
 assets.finalEnd.src = "assets/final_end.png";
 assets.gameOverScreen.src = "assets/game_over_screen.png";
 assets.mikeDialogIntro.src = "assets/mike_dialog_intro_custom.png";
@@ -444,13 +455,13 @@ function drawMaskedHead(img, dx, dy, dw, dh, crop) {
   return true;
 }
 
-function drawTypewriterLines(lines, x, y, size, color, t, cps = 34) {
+function drawTypewriterLines(lines, x, y, size, color, t, cps = 34, align = "left") {
   const full = lines.join("\n");
   const chars = Math.floor(t * cps);
   const shown = full.slice(0, chars);
   const split = shown.split("\n");
   for (let i = 0; i < split.length; i++) {
-    text(split[i], x, y + i * (size + 4), size, color);
+    text(split[i], x, y + i * (size + 4), size, color, align);
   }
 }
 
@@ -490,8 +501,10 @@ function shade(hex, amt) {
 
 function portraitForFighter(fighter) {
   if (fighter.kind === "mike") return null;
+  if (fighter === state.heroes.johnny) return assets.johnny;
+  if (fighter === state.heroes.travis) return assets.travis;
   if (fighter.name === "Johnny") return assets.johnny;
-  if (fighter.name === "Travis") return assets.travis;
+  if (fighter.name === "Niall") return assets.travis;
   return null;
 }
 
@@ -501,8 +514,10 @@ function faceCropForFighter(fighter) {
 }
 
 function bodySpriteForFighter(fighter) {
+  if (fighter === state.heroes.johnny) return assets.bodyJohnny;
+  if (fighter === state.heroes.travis) return assets.bodyTravis;
   if (fighter.name === "Johnny") return assets.bodyJohnny;
-  if (fighter.name === "Travis") return assets.bodyTravis;
+  if (fighter.name === "Niall") return assets.bodyTravis;
   if (fighter.kind === "mike") return fighter.mikeMode === "enraged" ? assets.mikeBodyEnraged : assets.mikeBodyNormal;
   if (fighter.kind === "thug" && fighter.spriteVariant === "alt") return assets.bodyEnemyAlt;
   return assets.bodyEnemy;
@@ -1669,7 +1684,7 @@ const state = {
       pants: "#2f6bc8",
     }),
     travis: new Fighter({
-      name: "Travis",
+      name: "Niall",
       x: 104,
       y: 140,
       hp: 140,
@@ -1840,11 +1855,11 @@ function triggerRejectBackToFight() {
 
 const OPENING_LINES = [
   "PRESIDENT RONNIE'S DAUGHTER",
-  "HAS BEEN KIDNAPPED BY MIKE.",
+  "HAS BEEN KIDNAPPED BY MONKEYS!",
   "",
-  "ARE JOHNNY + TRAVIS",
+  "ARE JOHNNY + NIALL",
   "BAD ENOUGH DUDES",
-  "TO RESCUE HER?",
+  "TO SAVE HER?",
 ];
 const OPENING_CPS = 17;
 const OPENING_HOLD = 1.4;
@@ -1857,15 +1872,26 @@ const introScenes = [
       rect(0, 0, VIRTUAL_W, VIRTUAL_H, "#040404");
       drawPhoto(assets.introKidnap, 0, 0, VIRTUAL_W, VIRTUAL_H);
       rect(0, 0, VIRTUAL_W, VIRTUAL_H, "rgba(0,0,0,0.35)");
-      rect(106, 12, 206, 100, "rgba(0,0,0,0.68)");
+      const textSize = 8;
+      const padX = 6;
+      const padY = 8;
+      const lineGap = 4;
+      ctx.font = `${textSize}px monospace`;
+      const maxLineW = Math.ceil(Math.max(...OPENING_LINES.map((ln) => ctx.measureText(ln).width)));
+      const boxW = maxLineW + padX * 2;
+      const boxH = OPENING_LINES.length * (textSize + lineGap) + padY * 2;
+      const boxX = VIRTUAL_W - 8 - boxW;
+      const boxY = 12;
+      rect(boxX, boxY, boxW, boxH, "rgba(0,0,0,0.68)");
       drawTypewriterLines(
         OPENING_LINES,
-        112,
-        30,
-        8,
+        boxX + boxW - padX,
+        boxY + padY + textSize + 2,
+        textSize,
         "#f4f4f4",
         t,
-        OPENING_CPS
+        OPENING_CPS,
+        "right"
       );
       rect(0, 149, VIRTUAL_W, 31, "rgba(0,0,0,0.75)");
       text("PRESS ENTER TO SKIP", 160, 168, 7, "#9bc2ff", "center");
@@ -2420,7 +2446,7 @@ function drawLevel() {
 
   drawUI();
 
-  const hero2 = state.activeHero === "johnny" ? "TRAVIS" : "JOHNNY";
+  const hero2 = (state.activeHero === "johnny" ? state.heroes.travis.name : state.heroes.johnny.name).toUpperCase();
   text(`ACTIVE: ${state.player.name.toUpperCase()}  (SHIFT FOR ${hero2})`, 10, 173, 7, "#d6e7ff");
 
   if (!state.bossSpawned && state.player.x > WORLD_WIDTH - 650) {
@@ -2802,7 +2828,7 @@ function resetGame() {
     pants: "#2f6bc8",
   });
   state.heroes.travis = new Fighter({
-    name: "Travis",
+    name: "Niall",
     x: 104,
     y: 140,
     hp: 140,
@@ -2895,7 +2921,7 @@ function resetToGameplay() {
     pants: "#2f6bc8",
   });
   state.heroes.travis = new Fighter({
-    name: "Travis",
+    name: "Niall",
     x: 104,
     y: 140,
     hp: 140,
