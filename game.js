@@ -797,6 +797,7 @@ class Soundtrack {
 
 const soundtrack = new Soundtrack();
 let audioPrimed = false;
+let tauntPromptFallbackUsed = false;
 function primeAudioClip(a) {
   if (!a) return;
   a.play().then(() => {
@@ -809,8 +810,12 @@ window.__unlockAudio = () => {
   soundtrack.unlockFromGesture();
   if (!audioPrimed) {
     audioPrimed = true;
-    // Prime only the opening track immediately so title/intro music starts fast.
+    // Prime opening immediately and key boss lines to avoid delayed first-play.
     primeAudioClip(audioTracks.opening);
+    primeAudioClip(voiceClips.mikeStopInsult1);
+    primeAudioClip(voiceClips.mikeStopInsult2);
+    primeAudioClip(voiceClips.mikeTellLoveMe);
+    primeAudioClip(voiceClips.mikeYouLoveMe);
   }
   if (state.scene === "level") bgm.play(state.bossSpawned ? "boss" : "gameplay");
   else if (state.scene === "ending") bgm.play("ending", true);
@@ -1158,7 +1163,13 @@ function listenMicTauntOnce() {
   return new Promise((resolve) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      resolve("");
+      if (tauntPromptFallbackUsed) {
+        resolve("");
+        return;
+      }
+      tauntPromptFallbackUsed = true;
+      const typed = window.prompt("Mic not available. Type a taunt (or type 'i love you'):") || "";
+      resolve(typed.trim());
       return;
     }
     const rec = new SR();
@@ -1173,9 +1184,16 @@ function listenMicTauntOnce() {
       const txt = evt?.results?.[0]?.[0]?.transcript || "";
       resolve(txt.trim());
     };
-    rec.onerror = () => {
+    rec.onerror = (evt) => {
       if (done) return;
       done = true;
+      const err = String(evt?.error || "");
+      if (!tauntPromptFallbackUsed && (err === "not-allowed" || err === "service-not-allowed" || err === "audio-capture")) {
+        tauntPromptFallbackUsed = true;
+        const typed = window.prompt("Mic permission is blocked. Type a taunt (or 'i love you'):") || "";
+        resolve(typed.trim());
+        return;
+      }
       resolve("");
     };
     rec.onend = () => {
@@ -2162,9 +2180,6 @@ function drawIntro(dt) {
 
   const scene = introScenes[state.introIndex];
   scene.draw(state.introElapsed);
-  if (!soundtrack.started) {
-    text("PRESS ANY KEY FOR AUDIO", 160, 14, 7, "#b5d8ff", "center");
-  }
   drawCrtOverlay();
 
   if (state.introElapsed > scene.len) {
@@ -2181,20 +2196,17 @@ function drawIntro(dt) {
 function drawStart(dt) {
   state.timer += dt;
   bgm.play("opening");
-  const startReady = assets.startScreen.complete && assets.startScreen.naturalWidth;
-  const introReady = assets.introKidnap.complete && assets.introKidnap.naturalWidth;
-  const readyToStart = startReady && introReady;
   rect(0, 0, VIRTUAL_W, VIRTUAL_H, "#000");
-  if (startReady) {
+  if (assets.startScreen.complete && assets.startScreen.naturalWidth) {
     drawPhotoContain(assets.startScreen, 0, 0, VIRTUAL_W, VIRTUAL_H);
   }
   rect(0, 146, VIRTUAL_W, 34, "rgba(0,0,0,0.52)");
-  if (readyToStart && Math.sin(state.timer * 6) > -0.15) {
+  if (Math.sin(state.timer * 6) > -0.15) {
     text("PRESS START", 160, 166, 12, "#ffe45f", "center");
   }
-  text(readyToStart ? "ENTER / SPACE / TAP BUTTON" : "LOADING INTRO ART...", 160, 177, 6, "#dce7ff", "center");
+  text("ENTER / SPACE / TAP BUTTON", 160, 177, 6, "#dce7ff", "center");
 
-  if (state.startFade <= 0 && readyToStart && (tap("enter", "enter") || tap("space", "space") || tap("j", "j"))) {
+  if (state.startFade <= 0 && (tap("enter", "enter") || tap("space", "space") || tap("j", "j"))) {
     if (window.__unlockAudio) window.__unlockAudio();
     bgm.play("opening");
     state.startFade = 0.001;
@@ -2869,6 +2881,7 @@ function resetGame() {
   state.tauntLastText = "";
   state.tauntIdleTimer = 0;
   state.tauntInsultAlt = false;
+  tauntPromptFallbackUsed = false;
   state.paused = false;
   state.mikeDialog.phase = null;
   state.mikeDialog.art = null;
@@ -2962,6 +2975,7 @@ function resetToGameplay() {
   state.tauntLastText = "";
   state.tauntIdleTimer = 0;
   state.tauntInsultAlt = false;
+  tauntPromptFallbackUsed = false;
   state.paused = false;
   state.mikeDialog.phase = null;
   state.mikeDialog.art = null;
