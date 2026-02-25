@@ -1088,6 +1088,73 @@ function heardLovePhrase(text) {
   return /\bi love you\b/.test(t);
 }
 
+let tauntSttInFlight = false;
+let tauntSttLastAt = 0;
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunk) {
+    const sub = bytes.subarray(i, i + chunk);
+    binary += String.fromCharCode(...sub);
+  }
+  return btoa(binary);
+}
+
+async function transcribeMicWithOpenAI(durationMs = 1200) {
+  if (tauntSttInFlight) return "";
+  const now = performance.now();
+  if (now - tauntSttLastAt < 1400) return "";
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") return "";
+
+  tauntSttInFlight = true;
+  tauntSttLastAt = now;
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const preferred = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/mp4",
+    ];
+    const mimeType = preferred.find((m) => MediaRecorder.isTypeSupported?.(m)) || "";
+    const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const chunks = [];
+    rec.ondataavailable = (evt) => {
+      if (evt.data?.size) chunks.push(evt.data);
+    };
+    rec.start();
+    await new Promise((resolve) => setTimeout(resolve, durationMs));
+    await new Promise((resolve) => {
+      rec.onstop = resolve;
+      rec.stop();
+    });
+    const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+    if (!blob.size) return "";
+
+    const audioBase64 = arrayBufferToBase64(await blob.arrayBuffer());
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        audioBase64,
+        mimeType: blob.type || "audio/webm",
+      }),
+    });
+    if (!res.ok) return "";
+    const json = await res.json();
+    return String(json?.text || "").trim();
+  } catch (_) {
+    return "";
+  } finally {
+    tauntSttInFlight = false;
+    if (stream) {
+      for (const track of stream.getTracks()) track.stop();
+    }
+  }
+}
+
 function listenMicOnce() {
   return new Promise((resolve) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1167,7 +1234,7 @@ function listenMicTauntOnce() {
   return new Promise((resolve) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      resolve("");
+      transcribeMicWithOpenAI().then((txt) => resolve(txt || "")).catch(() => resolve(""));
       return;
     }
     const rec = new SR();
@@ -1185,12 +1252,12 @@ function listenMicTauntOnce() {
     rec.onerror = () => {
       if (done) return;
       done = true;
-      resolve("");
+      transcribeMicWithOpenAI().then((txt) => resolve(txt || "")).catch(() => resolve(""));
     };
     rec.onend = () => {
       if (done) return;
       done = true;
-      resolve("");
+      transcribeMicWithOpenAI().then((txt) => resolve(txt || "")).catch(() => resolve(""));
     };
     try {
       rec.start();

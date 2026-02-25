@@ -240,6 +240,40 @@ async function callOpenAITts(payload) {
   return { audio };
 }
 
+async function transcribeAudio(payload) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY not set");
+
+  const audioBase64 = String(payload?.audioBase64 || "");
+  if (!audioBase64) throw new Error("Missing audio payload");
+  const mimeType = String(payload?.mimeType || "audio/webm");
+  const model = String(process.env.OPENAI_STT_MODEL || "gpt-4o-mini-transcribe");
+
+  const audioBuffer = Buffer.from(audioBase64, "base64");
+  if (!audioBuffer.length) throw new Error("Empty audio payload");
+
+  const fd = new FormData();
+  const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "m4a" : "webm";
+  fd.set("model", model);
+  fd.set("file", new Blob([audioBuffer], { type: mimeType }), `taunt.${ext}`);
+
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: fd,
+  });
+
+  if (!response.ok) {
+    const txt = await response.text();
+    throw new Error(`OpenAI STT error ${response.status}: ${txt.slice(0, 240)}`);
+  }
+
+  const json = await response.json();
+  return String(json?.text || "").trim();
+}
+
 async function handleDialogueApi(req, res) {
   const payload = await parseJsonBody(req);
 
@@ -280,6 +314,18 @@ async function handleRealtimeSessionApi(req, res) {
   } catch (err) {
     res.writeHead(503, { "Content-Type": MIME[".json"] });
     res.end(JSON.stringify({ ok: false, error: String(err.message || err) }));
+  }
+}
+
+async function handleTranscribeApi(req, res) {
+  const payload = await parseJsonBody(req);
+  try {
+    const text = await transcribeAudio(payload);
+    res.writeHead(200, { "Content-Type": MIME[".json"] });
+    res.end(JSON.stringify({ ok: true, text }));
+  } catch (err) {
+    res.writeHead(503, { "Content-Type": MIME[".json"] });
+    res.end(JSON.stringify({ ok: false, text: "", error: String(err.message || err) }));
   }
 }
 
@@ -324,6 +370,10 @@ const server = createServer(async (req, res) => {
   }
   if ((req.method === "POST") && req.url === "/api/tts") {
     await handleTtsApi(req, res);
+    return;
+  }
+  if ((req.method === "POST") && req.url === "/api/transcribe") {
+    await handleTranscribeApi(req, res);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {
