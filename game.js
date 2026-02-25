@@ -1864,6 +1864,17 @@ const OPENING_LINES = [
 const OPENING_CPS = 17;
 const OPENING_HOLD = 1.4;
 const OPENING_LEN = OPENING_LINES.join("\n").length / OPENING_CPS + OPENING_HOLD;
+const LEVEL_INTRO_LINES = [
+  "LEVEL 1: IRON DISTRICT",
+  "",
+  "FIND MIKE.",
+  "RESCUE RONNIE'S DAUGHTER.",
+  "",
+  "FIGHT STARTS NOW.",
+];
+const LEVEL_INTRO_CPS = 18;
+const LEVEL_INTRO_HOLD = 0.9;
+const LEVEL_INTRO_LEN = LEVEL_INTRO_LINES.join("\n").length / LEVEL_INTRO_CPS + LEVEL_INTRO_HOLD;
 
 const introScenes = [
   {
@@ -1880,30 +1891,48 @@ const introScenes = [
       const maxLineW = Math.ceil(Math.max(...OPENING_LINES.map((ln) => ctx.measureText(ln).width)));
       const boxW = maxLineW + padX * 2;
       const boxH = OPENING_LINES.length * (textSize + lineGap) + padY * 2;
-      const boxX = VIRTUAL_W - 8 - boxW;
+      const boxX = 8;
       const boxY = 12;
       rect(boxX, boxY, boxW, boxH, "rgba(0,0,0,0.68)");
       drawTypewriterLines(
         OPENING_LINES,
-        boxX + boxW - padX,
+        boxX + padX,
         boxY + padY + textSize + 2,
         textSize,
         "#f4f4f4",
         t,
         OPENING_CPS,
-        "right"
+        "left"
       );
       rect(0, 149, VIRTUAL_W, 31, "rgba(0,0,0,0.75)");
       text("PRESS ENTER TO SKIP", 160, 168, 7, "#9bc2ff", "center");
     },
   },
   {
-    len: 3,
-    draw() {
+    len: LEVEL_INTRO_LEN,
+    draw(t) {
       rect(0, 0, VIRTUAL_W, VIRTUAL_H, "#07070b");
-      text("LEVEL 1: IRON DISTRICT", 160, 78, 11, "#ffd250", "center");
-      text("FIND MIKE. RESCUE RONNIE'S DAUGHTER.", 160, 95, 8, "#f2f2f2", "center");
-      text("FIGHT STARTS NOW.", 160, 120, 8, "#ff7f64", "center");
+      const textSize = 8;
+      const padX = 6;
+      const padY = 8;
+      const lineGap = 4;
+      ctx.font = `${textSize}px monospace`;
+      const maxLineW = Math.ceil(Math.max(...LEVEL_INTRO_LINES.map((ln) => ctx.measureText(ln).width)));
+      const boxW = maxLineW + padX * 2;
+      const boxH = LEVEL_INTRO_LINES.length * (textSize + lineGap) + padY * 2;
+      const boxX = 8;
+      const boxY = 20;
+      rect(boxX, boxY, boxW, boxH, "rgba(100,100,100,0.62)");
+      drawTypewriterLines(
+        LEVEL_INTRO_LINES,
+        boxX + padX,
+        boxY + padY + textSize + 2,
+        textSize,
+        "#f4f4f4",
+        t,
+        LEVEL_INTRO_CPS,
+        "left"
+      );
     },
   },
 ];
