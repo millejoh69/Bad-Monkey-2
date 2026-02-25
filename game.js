@@ -1931,17 +1931,6 @@ const OPENING_LINES = [
 const OPENING_CPS = 17;
 const OPENING_HOLD = 1.4;
 const OPENING_LEN = OPENING_LINES.join("\n").length / OPENING_CPS + OPENING_HOLD;
-const LEVEL_INTRO_LINES = [
-  "LEVEL 1: IRON DISTRICT",
-  "",
-  "FIND MYLES.",
-  "RESCUE RONNIE'S DAUGHTER.",
-  "",
-  "FIGHT STARTS NOW.",
-];
-const LEVEL_INTRO_CPS = 18;
-const LEVEL_INTRO_HOLD = 0.9;
-const LEVEL_INTRO_LEN = LEVEL_INTRO_LINES.join("\n").length / LEVEL_INTRO_CPS + LEVEL_INTRO_HOLD;
 
 const introScenes = [
   {
@@ -1976,30 +1965,12 @@ const introScenes = [
     },
   },
   {
-    len: LEVEL_INTRO_LEN,
-    draw(t) {
+    len: 3,
+    draw() {
       rect(0, 0, VIRTUAL_W, VIRTUAL_H, "#07070b");
-      const textSize = 8;
-      const padX = 6;
-      const padY = 8;
-      const lineGap = 4;
-      ctx.font = `${textSize}px monospace`;
-      const maxLineW = Math.ceil(Math.max(...LEVEL_INTRO_LINES.map((ln) => ctx.measureText(ln).width)));
-      const boxW = maxLineW + padX * 2;
-      const boxH = LEVEL_INTRO_LINES.length * (textSize + lineGap) + padY * 2;
-      const boxX = 8;
-      const boxY = 20;
-      rect(boxX, boxY, boxW, boxH, "rgba(100,100,100,0.62)");
-      drawTypewriterLines(
-        LEVEL_INTRO_LINES,
-        boxX + padX,
-        boxY + padY + textSize + 2,
-        textSize,
-        "#f4f4f4",
-        t,
-        LEVEL_INTRO_CPS,
-        "left"
-      );
+      text("LEVEL 1: JUNKIE TOWN.", 160, 78, 11, "#ffd250", "center");
+      text("FIND BAD MONKEY. SAVE PRESIDENT RONNIE'S DAUGHTER.", 160, 95, 8, "#f2f2f2", "center");
+      text("GET READY TO FIGHT!", 160, 120, 8, "#ff7f64", "center");
     },
   },
 ];
