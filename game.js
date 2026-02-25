@@ -797,25 +797,29 @@ class Soundtrack {
 
 const soundtrack = new Soundtrack();
 let audioPrimed = false;
-let tauntPromptFallbackUsed = false;
-function primeAudioClip(a) {
-  if (!a) return;
-  a.play().then(() => {
-    a.pause();
-    a.currentTime = 0;
-  }).catch(() => {});
-}
-
 window.__unlockAudio = () => {
   soundtrack.unlockFromGesture();
   if (!audioPrimed) {
     audioPrimed = true;
-    // Prime opening immediately and key boss lines to avoid delayed first-play.
-    primeAudioClip(audioTracks.opening);
-    primeAudioClip(voiceClips.mikeStopInsult1);
-    primeAudioClip(voiceClips.mikeStopInsult2);
-    primeAudioClip(voiceClips.mikeTellLoveMe);
-    primeAudioClip(voiceClips.mikeYouLoveMe);
+    for (const [name, t] of Object.entries(audioTracks)) {
+      if (bgm.current === name) continue;
+      t.play().then(() => {
+        t.pause();
+        t.currentTime = 0;
+      }).catch(() => {});
+    }
+  }
+  for (const s of Object.values(sfxTracks)) {
+    s.play().then(() => {
+      s.pause();
+      s.currentTime = 0;
+    }).catch(() => {});
+  }
+  for (const clip of Object.values(voiceClips)) {
+    clip.play().then(() => {
+      clip.pause();
+      clip.currentTime = 0;
+    }).catch(() => {});
   }
   if (state.scene === "level") bgm.play(state.bossSpawned ? "boss" : "gameplay");
   else if (state.scene === "ending") bgm.play("ending", true);
@@ -1163,13 +1167,7 @@ function listenMicTauntOnce() {
   return new Promise((resolve) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      if (tauntPromptFallbackUsed) {
-        resolve("");
-        return;
-      }
-      tauntPromptFallbackUsed = true;
-      const typed = window.prompt("Mic not available. Type a taunt (or type 'i love you'):") || "";
-      resolve(typed.trim());
+      resolve("");
       return;
     }
     const rec = new SR();
@@ -1184,16 +1182,9 @@ function listenMicTauntOnce() {
       const txt = evt?.results?.[0]?.[0]?.transcript || "";
       resolve(txt.trim());
     };
-    rec.onerror = (evt) => {
+    rec.onerror = () => {
       if (done) return;
       done = true;
-      const err = String(evt?.error || "");
-      if (!tauntPromptFallbackUsed && (err === "not-allowed" || err === "service-not-allowed" || err === "audio-capture")) {
-        tauntPromptFallbackUsed = true;
-        const typed = window.prompt("Mic permission is blocked. Type a taunt (or 'i love you'):") || "";
-        resolve(typed.trim());
-        return;
-      }
       resolve("");
     };
     rec.onend = () => {
@@ -2180,6 +2171,9 @@ function drawIntro(dt) {
 
   const scene = introScenes[state.introIndex];
   scene.draw(state.introElapsed);
+  if (!soundtrack.started) {
+    text("PRESS ANY KEY FOR AUDIO", 160, 14, 7, "#b5d8ff", "center");
+  }
   drawCrtOverlay();
 
   if (state.introElapsed > scene.len) {
@@ -2207,8 +2201,6 @@ function drawStart(dt) {
   text("ENTER / SPACE / TAP BUTTON", 160, 177, 6, "#dce7ff", "center");
 
   if (state.startFade <= 0 && (tap("enter", "enter") || tap("space", "space") || tap("j", "j"))) {
-    if (window.__unlockAudio) window.__unlockAudio();
-    bgm.play("opening");
     state.startFade = 0.001;
   }
   if (state.startFade > 0) {
@@ -2881,7 +2873,6 @@ function resetGame() {
   state.tauntLastText = "";
   state.tauntIdleTimer = 0;
   state.tauntInsultAlt = false;
-  tauntPromptFallbackUsed = false;
   state.paused = false;
   state.mikeDialog.phase = null;
   state.mikeDialog.art = null;
@@ -2975,7 +2966,6 @@ function resetToGameplay() {
   state.tauntLastText = "";
   state.tauntIdleTimer = 0;
   state.tauntInsultAlt = false;
-  tauntPromptFallbackUsed = false;
   state.paused = false;
   state.mikeDialog.phase = null;
   state.mikeDialog.art = null;
