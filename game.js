@@ -963,7 +963,7 @@ class MikeRealtimeVoice {
           max_response_output_tokens: 90,
           temperature: 0.1,
           instructions:
-            "You are Mike. Speak only the exact line provided below, word-for-word, with furious, aggressive, interruptive arcade-boss energy. Use a fast pace with minimal pauses and no extra words.\n" +
+            "You are Myles. Speak only the exact line provided below, word-for-word, with furious, aggressive, interruptive arcade-boss energy. Use a fast pace with minimal pauses and no extra words.\n" +
             `LINE: ${prompt}`,
         },
       }));
@@ -1934,7 +1934,7 @@ const OPENING_LEN = OPENING_LINES.join("\n").length / OPENING_CPS + OPENING_HOLD
 const LEVEL_INTRO_LINES = [
   "LEVEL 1: IRON DISTRICT",
   "",
-  "FIND MIKE.",
+  "FIND MYLES.",
   "RESCUE RONNIE'S DAUGHTER.",
   "",
   "FIGHT STARTS NOW.",
@@ -2080,7 +2080,7 @@ function spawnBossMike() {
   const spawnY = clamp(state.player.y + (Math.random() > 0.5 ? -8 : 8), FLOOR_TOP + 8, FLOOR_BOTTOM - 6);
   state.enemies.push(
     new Fighter({
-      name: "Mike",
+      name: "Myles",
       x: spawnX,
       y: spawnY,
       hp: 900,
@@ -2526,7 +2526,7 @@ function drawLevel() {
 
     if (f.kind === "mike" && f.alive) {
       const sx = f.x - state.cameraX;
-      const mikeName = state.mikeMode === "enraged" ? "MIKE: ENRAGED" : state.mikeMode === "crafty" ? "MIKE: CRAFTY" : "MIKE";
+      const mikeName = state.mikeMode === "enraged" ? "MYLES: ENRAGED" : state.mikeMode === "crafty" ? "MYLES: CRAFTY" : "MYLES";
       text(mikeName, sx, f.y - 32, 7, "#ff9d9d", "center");
     }
   }
@@ -2546,11 +2546,11 @@ function drawLevel() {
   text(`ACTIVE: ${state.player.name.toUpperCase()}  (SHIFT FOR ${hero2})`, 10, 173, 7, "#d6e7ff");
 
   if (!state.bossSpawned && state.player.x > WORLD_WIDTH - 650) {
-    text("YOU'RE CLOSE. MIKE IS AHEAD.", 160, 92, 8, "#ffd88a", "center");
+    text("YOU'RE CLOSE. MYLES IS AHEAD.", 160, 92, 8, "#ffd88a", "center");
   }
   if (state.preBossRevealTimer > 0) {
     rect(74, 74, 172, 18, "rgba(0,0,0,0.58)");
-    text("MIKE HAS ARRIVED...", 160, 86, 8, "#ff9d9d", "center");
+    text("MYLES HAS ARRIVED...", 160, 86, 8, "#ff9d9d", "center");
   }
   const mike = getBossMike();
   if (mike && !state.bossDeathActive) {

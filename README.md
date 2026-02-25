@@ -3,15 +3,15 @@
 A browser brawler inspired by late-80s side-scrollers.
 
 ## Story setup
-Mike (a shaved monkey) kidnaps President Ronnie's daughter. Johnny and Niall hit the streets to get her back.
+Myles (a shaved monkey) kidnaps President Ronnie's daughter. Johnny and Niall hit the streets to get her back.
 
-## New Mike voice branches
-- First Mike encounter triggers a dialogue inter-state.
+## New Myles voice branches
+- First Myles encounter triggers a dialogue inter-state.
 - Speak into the mic when prompted.
 - Your response is classified as:
-  - `aggressive` -> Mike becomes **Enraged** (bigger, red flash, stronger, throws knives).
-  - `determined` -> Mike becomes **Crafty** (more evasive and unpredictable).
-- At 25% Mike HP, a second voice inter-state triggers and changes his final-phase behavior.
+  - `aggressive` -> Myles becomes **Enraged** (bigger, red flash, stronger, throws knives).
+  - `determined` -> Myles becomes **Crafty** (more evasive and unpredictable).
+- At 25% Myles HP, a second voice inter-state triggers and changes his final-phase behavior.
 
 ## Run locally (with ChatGPT backend)
 
@@ -35,7 +35,7 @@ Mike (a shaved monkey) kidnaps President Ronnie's daughter. Johnny and Niall hit
 
 Notes:
 - If no API key is set, the game still works with local fallback classification/dialogue.
-- Mike voice uses OpenAI Realtime during Mike dialog scenes when available.
+- Myles voice uses OpenAI Realtime during Myles dialog scenes when available.
 - If Realtime setup fails, it falls back to `/api/tts`, then browser speech.
 - Browser mic permission is required for voice input.
 - Browser speech recognition support varies by browser.

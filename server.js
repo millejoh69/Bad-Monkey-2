@@ -76,10 +76,10 @@ async function callOpenAI(payload) {
   const phase = payload.phase === "phase2" ? "phase2" : "intro";
   const allowed = phase === "intro" ? "aggressive|determined" : "taunt|angry";
   const system = [
-    "You are Mike, a taunting monkey boss in an arcade beat-em-up.",
+    "You are Myles, a taunting monkey boss in an arcade beat-em-up.",
     `Classify player text as one of: ${allowed}.`,
     "Return JSON only with keys: classification, mikeLine.",
-    "mikeLine must be one short, hostile taunting sentence in Mike's voice, directly addressing the player's words.",
+    "mikeLine must be one short, hostile taunting sentence in Myles' voice, directly addressing the player's words.",
     "Prefer interruption language like 'Enough' or 'Shut it' when it fits, keep it aggressive and challenging, and reference prior banter when possible.",
     "No slurs, no hate content, no targeting protected classes.",
     "No markdown.",
@@ -160,7 +160,7 @@ async function createRealtimeCall(sdp) {
   const voice = String(process.env.OPENAI_TTS_VOICE || "onyx");
   const instructions = String(
     process.env.OPENAI_REALTIME_INSTRUCTIONS ||
-      "You are Mike, a furious arcade boss. Deliver lines with aggressive, angry energy, clipped rhythm, and minimal silence. Keep lines short, hostile, and challenging."
+      "You are Myles, a furious arcade boss. Deliver lines with aggressive, angry energy, clipped rhythm, and minimal silence. Keep lines short, hostile, and challenging."
   );
 
   const session = JSON.stringify({
